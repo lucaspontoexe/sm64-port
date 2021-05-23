@@ -8,6 +8,7 @@
 
 #include <kernel.h>
 #include <gsKit.h>
+#include <gsHires.h>
 #include <dmaKit.h>
 
 #include "gfx_window_manager_api.h"
@@ -26,20 +27,21 @@ struct VidMode {
     int width;
     int height;
     int vck;
+    int iPassCount;
     int x_off;
     int y_off;
 };
 
 static const struct VidMode vid_modes[] = {
     // NTSC
-    { "480i", GS_MODE_NTSC,      GS_INTERLACED,    GS_FIELD,  704,  480,  704,  452, 4, 0, 0 },
-    { "480p", GS_MODE_DTV_480P,  GS_NONINTERLACED, GS_FRAME,  704,  480,  704,  452, 2, 0, 0 },
+    { "480i", GS_MODE_NTSC,      GS_INTERLACED,    GS_FIELD,  704,  480,  704,  452, 4, 2, 0, 0 },
+    { "480p", GS_MODE_DTV_480P,  GS_NONINTERLACED, GS_FRAME,  704,  480,  704,  452, 2, 2, 0, 0 },
     // PAL
-    { "576i", GS_MODE_PAL,       GS_INTERLACED,    GS_FIELD,  704,  576,  704,  536, 4, 0, 0 },
-    { "576p", GS_MODE_DTV_576P,  GS_NONINTERLACED, GS_FRAME,  704,  576,  704,  536, 2, 0, 0 },
+    { "576i", GS_MODE_PAL,       GS_INTERLACED,    GS_FIELD,  704,  576,  704,  536, 4, 3, 0, 0 },
+    { "576p", GS_MODE_DTV_576P,  GS_NONINTERLACED, GS_FRAME,  704,  576,  704,  536, 2, 3, 0, 0 },
     // HDTV
-    { "720p", GS_MODE_DTV_720P,  GS_NONINTERLACED, GS_FRAME, 1280,  720, 1280,  698, 1, 0, 0 },
-    {"1080i", GS_MODE_DTV_1080I, GS_INTERLACED,    GS_FIELD, 1920, 1080, 1920, 1080, 1, 0, 0 },
+    { "720p", GS_MODE_DTV_720P,  GS_NONINTERLACED, GS_FRAME, 1280,  720, 1280,  720, 1, 2, 0, 0 },
+    {"1080i", GS_MODE_DTV_1080I, GS_INTERLACED,    GS_FIELD, 1920, 1080, 1920, 1080, 1, 2, 0, 0 },
 };
 
 GSGLOBAL *gs_global;
@@ -56,6 +58,8 @@ static volatile unsigned int vblank_count = 0;
 static int vsync_callback_id = -1;
 volatile bool render_finished;
 
+static bool use_hires = false;
+
 static int vsync_callback(void) {
     if (render_finished) gsKit_display_buffer(gs_global); // working buffer gets displayed
 
@@ -67,7 +71,14 @@ static int vsync_callback(void) {
 }
 
 static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
-    gs_global = gsKit_init_global();
+    vid_mode = &vid_modes[4];
+    // if CHOSEN_MODE > 3, or:
+    use_hires = (vid_mode->mode == GS_MODE_DTV_720P || vid_mode->mode == GS_MODE_DTV_1080I);
+
+    if (use_hires)
+        gs_global = gsKit_hires_init_global();
+    else 
+        gs_global = gsKit_init_global();
 
     dmaKit_init(D_CTRL_RELE_OFF, D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
                 D_CTRL_STD_OFF, D_CTRL_RCYC_8, 1 << DMA_CHANNEL_GIF);
@@ -76,10 +87,11 @@ static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
 
     vsync_callback_id = gsKit_add_vsync_handler(&vsync_callback);
 
-    if (gsKit_detect_signal() == GS_MODE_NTSC)
-        vid_mode = &vid_modes[0];
-    else
-        vid_mode = &vid_modes[2];
+	gs_global->Mode = vid_mode->mode;
+	gs_global->Interlace = vid_mode->interlace;
+	gs_global->Field = vid_mode->field;
+	gs_global->Width = vid_mode->width;
+	gs_global->Height = vid_mode->height;
 
     gs_global->ZBuffering = GS_SETTING_ON;
     gs_global->DoubleBuffering = GS_SETTING_ON;
@@ -87,10 +99,21 @@ static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
     gs_global->PSM = GS_PSM_CT16; // RGB565 color buffer
     gs_global->PSMZ = GS_PSMZ_16; // 16-bit unsigned zbuffer
 
-    gsKit_init_screen(gs_global);
-
     window_width = gs_global->Width;
     window_height = gs_global->Height;
+
+    // for 1080i (but does it work?)
+    // if ((gs_global->Interlace == GS_INTERLACED) && (gs_global->Field == GS_FRAME))
+    if (gs_global->Mode == GS_MODE_DTV_1080I) 
+		gs_global->Height /= 2;
+
+    if (use_hires)
+        gsKit_hires_init_screen(gs_global, vid_mode->iPassCount);
+    else 
+        gsKit_init_screen(gs_global);
+
+    gsKit_set_display_offset(gs_global, 0, 0);
+
     render_finished = true; //Prevents startup softlock
 }
 
@@ -133,7 +156,15 @@ static void gfx_ps2_handle_events(void) {
 }
 
 static bool gfx_ps2_start_frame(void) {
-    if (do_render) gsKit_sync_flip(gs_global);
+    if (use_hires) {
+        if (do_render) {
+            gsKit_hires_sync(gs_global);
+		    gsKit_hires_flip(gs_global);
+        }
+        return do_render;
+    }
+    
+    gsKit_sync_flip(gs_global);
     return do_render;
 }
 
