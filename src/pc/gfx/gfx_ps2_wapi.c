@@ -72,7 +72,6 @@ static int vsync_callback(void) {
 
 static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
     vid_mode = &vid_modes[4];
-    // if CHOSEN_MODE > 3, or:
     use_hires = (vid_mode->mode == GS_MODE_DTV_720P || vid_mode->mode == GS_MODE_DTV_1080I);
 
     if (use_hires)
@@ -102,7 +101,7 @@ static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
     window_width = gs_global->Width;
     window_height = gs_global->Height;
 
-    // for 1080i (but does it work?)
+    // 1080i requires special handling
     // if ((gs_global->Interlace == GS_INTERLACED) && (gs_global->Field == GS_FRAME))
     if (gs_global->Mode == GS_MODE_DTV_1080I) 
 		gs_global->Height /= 2;
