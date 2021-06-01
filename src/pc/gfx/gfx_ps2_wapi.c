@@ -61,7 +61,8 @@ volatile bool render_finished;
 static bool use_hires = false;
 
 static int vsync_callback(void) {
-    if (render_finished) gsKit_display_buffer(gs_global); // working buffer gets displayed
+    if (render_finished)
+        gsKit_display_buffer(gs_global); // working buffer gets displayed
 
     ++vblank_count;
 
@@ -76,7 +77,7 @@ static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
 
     if (use_hires)
         gs_global = gsKit_hires_init_global();
-    else 
+    else
         gs_global = gsKit_init_global();
 
     dmaKit_init(D_CTRL_RELE_OFF, D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
@@ -86,11 +87,11 @@ static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
 
     vsync_callback_id = gsKit_add_vsync_handler(&vsync_callback);
 
-	gs_global->Mode = vid_mode->mode;
-	gs_global->Interlace = vid_mode->interlace;
-	gs_global->Field = vid_mode->field;
-	gs_global->Width = vid_mode->width;
-	gs_global->Height = vid_mode->height;
+    gs_global->Mode = vid_mode->mode;
+    gs_global->Interlace = vid_mode->interlace;
+    gs_global->Field = vid_mode->field;
+    gs_global->Width = vid_mode->width;
+    gs_global->Height = vid_mode->height;
 
     gs_global->ZBuffering = GS_SETTING_ON;
     gs_global->DoubleBuffering = GS_SETTING_ON;
@@ -103,34 +104,35 @@ static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
 
     // 1080i requires special handling
     // if ((gs_global->Interlace == GS_INTERLACED) && (gs_global->Field == GS_FRAME))
-    if (gs_global->Mode == GS_MODE_DTV_1080I) 
-		gs_global->Height /= 2;
+    if (gs_global->Mode == GS_MODE_DTV_1080I)
+        gs_global->Height /= 2;
 
     if (use_hires)
         gsKit_hires_init_screen(gs_global, vid_mode->iPassCount);
-    else 
+    else
         gsKit_init_screen(gs_global);
 
     gsKit_set_display_offset(gs_global, 0, 0);
 
-    render_finished = true; //Prevents startup softlock
+    render_finished = true; // Prevents startup softlock
 }
 
-static void gfx_ps2_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
-
+static void
+gfx_ps2_set_fullscreen_changed_callback(void (*on_fullscreen_changed)(bool is_now_fullscreen)) {
 }
 
 static void gfx_ps2_set_fullscreen(bool enable) {
-
 }
 
-static void gfx_ps2_set_keyboard_callbacks(bool (*on_key_down)(int scancode), bool (*on_key_up)(int scancode), void (*on_all_keys_up)(void)) {
-
+static void gfx_ps2_set_keyboard_callbacks(bool (*on_key_down)(int scancode),
+                                           bool (*on_key_up)(int scancode),
+                                           void (*on_all_keys_up)(void)) {
 }
 
 static void gfx_ps2_main_loop(void (*run_one_game_iter)(void)) {
     const unsigned int now = vblank_count >> FRAMERATE_SHIFT;
-    if (!last) last = now;
+    if (!last)
+        last = now;
 
     const unsigned int frames = now - last;
 
@@ -151,18 +153,17 @@ static void gfx_ps2_get_dimensions(uint32_t *width, uint32_t *height) {
 }
 
 static void gfx_ps2_handle_events(void) {
-
 }
 
 static bool gfx_ps2_start_frame(void) {
     if (use_hires) {
         if (do_render) {
             gsKit_hires_sync(gs_global);
-		    gsKit_hires_flip(gs_global);
+            gsKit_hires_flip(gs_global);
         }
         return do_render;
     }
-    
+
     gsKit_sync_flip(gs_global);
     return do_render;
 }
@@ -171,25 +172,22 @@ static void gfx_ps2_swap_buffers_begin(void) {
 }
 
 static void gfx_ps2_swap_buffers_end(void) {
-
 }
 
 static double gfx_ps2_get_time(void) {
     return 0.0;
 }
 
-struct GfxWindowManagerAPI gfx_ps2_wapi = {
-    gfx_ps2_init,
-    gfx_ps2_set_keyboard_callbacks,
-    gfx_ps2_set_fullscreen_changed_callback,
-    gfx_ps2_set_fullscreen,
-    gfx_ps2_main_loop,
-    gfx_ps2_get_dimensions,
-    gfx_ps2_handle_events,
-    gfx_ps2_start_frame,
-    gfx_ps2_swap_buffers_begin,
-    gfx_ps2_swap_buffers_end,
-    gfx_ps2_get_time
-};
+struct GfxWindowManagerAPI gfx_ps2_wapi = { gfx_ps2_init,
+                                            gfx_ps2_set_keyboard_callbacks,
+                                            gfx_ps2_set_fullscreen_changed_callback,
+                                            gfx_ps2_set_fullscreen,
+                                            gfx_ps2_main_loop,
+                                            gfx_ps2_get_dimensions,
+                                            gfx_ps2_handle_events,
+                                            gfx_ps2_start_frame,
+                                            gfx_ps2_swap_buffers_begin,
+                                            gfx_ps2_swap_buffers_end,
+                                            gfx_ps2_get_time };
 
 #endif // TARGET_PS2
