@@ -34,8 +34,8 @@ struct VidMode {
 
 static const struct VidMode vid_modes[] = {
     // NTSC
-    { "480i", GS_MODE_NTSC,      GS_INTERLACED,    GS_FIELD,  704,  480,  704,  452, 4, 2, 0, 0 },
-    { "480p", GS_MODE_DTV_480P,  GS_NONINTERLACED, GS_FRAME,  704,  480,  704,  452, 2, 2, 0, 0 },
+    { "480i", GS_MODE_NTSC,      GS_INTERLACED,    GS_FIELD,  704,  480,  640,  448, 4, 2, 0, 0 },
+    { "480p", GS_MODE_DTV_480P,  GS_NONINTERLACED, GS_FRAME,  704,  480,  640,  448, 2, 2, 0, 0 },
     // PAL
     { "576i", GS_MODE_PAL,       GS_INTERLACED,    GS_FIELD,  704,  576,  704,  536, 4, 3, 0, 0 },
     { "576p", GS_MODE_DTV_576P,  GS_NONINTERLACED, GS_FRAME,  704,  576,  704,  536, 2, 3, 0, 0 },
