@@ -72,7 +72,7 @@ static int vsync_callback(void) {
 }
 
 static void gfx_ps2_init(const char *game_name, bool start_in_fullscreen) {
-    vid_mode = &vid_modes[4];
+    vid_mode = &vid_modes[0];
     use_hires = (vid_mode->mode == GS_MODE_DTV_720P || vid_mode->mode == GS_MODE_DTV_1080I);
 
     if (use_hires)
